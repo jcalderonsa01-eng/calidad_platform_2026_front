@@ -121,9 +121,20 @@ export default function UploadDocument() {
         const target = document.getElementById(`page-container-${pageNum}`);
 
         if (container && target) {
-            const topPos = target.offsetTop - container.offsetTop;
+            // Calculamos la posición necesaria para que el centro del 'target' 
+            // coincida con el centro del 'container'
+            const targetRect = target.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+
+            // target.offsetTop es la distancia desde el inicio del contenedor
+            // Queremos restarle la mitad del espacio sobrante del contenedor
+            const scrollTarget =
+                target.offsetTop -
+                (container.clientHeight / 2) +
+                (target.clientHeight / 2);
+
             container.scrollTo({
-                top: topPos - 10,
+                top: scrollTarget,
                 behavior: 'smooth'
             });
         }
@@ -234,8 +245,8 @@ export default function UploadDocument() {
         <div className="flex h-full w-full gap-x-6 bg-slate-50 p-4 overflow-hidden">
             <ToastContainer position="top-right" theme="colored" />
 
-            {/* Sidebar Detalle */}
-            <aside className="flex w-[380px] flex-col gap-y-4 shrink-0 h-full">
+            {/* Sidebar Detalle: Se ajusta al alto disponible sin scroll externo */}
+            <aside className="flex w-[380px] flex-col gap-y-4 shrink-0 h-full overflow-hidden">
                 <section className="flex flex-col gap-y-2">
                     <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden bg-white h-10 shadow-sm">
                         <label className="bg-zinc-900 text-white px-4 flex items-center gap-x-2 cursor-pointer hover:bg-black h-full text-xs font-bold">
@@ -251,6 +262,7 @@ export default function UploadDocument() {
                         <h2 className="text-sm font-bold text-zinc-800 uppercase">Detalle Antena</h2>
                         <span className="bg-zinc-900 text-white text-[17px] px-2 py-1 rounded-full font-bold">ID: {selectedAntena?.['#'] || '--'}</span>
                     </div>
+                    {/* Scroll interno solo para los campos de la antena */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
                         {targetColumns.slice(1).map((col) => (
                             <div key={col} className="group">
@@ -266,10 +278,10 @@ export default function UploadDocument() {
 
             {/* Visor Principal */}
             <main className="flex-1 flex flex-col gap-y-4 overflow-hidden h-full">
-                <header className="flex items-center justify-between gap-x-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+                <header className="flex items-center justify-between gap-x-4 bg-white p-4 rounded-2xl border border-gray-200 shadow-sm shrink-0">
                     <div className="flex flex-col gap-y-1 w-1/3">
                         <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden h-9">
-                            <label className="bg-zinc-100 text-zinc-700 px-3 flex items-center gap-x-2 cursor-pointer hover:bg-zinc-200 h-full text-xs font-bold transition-colors">
+                            <label className="bg-zinc-900 text-white px-3 flex items-center gap-x-2 cursor-pointer h-full text-xs font-bold transition-colors">
                                 <FileText size={14} /> Adjuntar PDF
                                 <input type="file" className="hidden" accept=".pdf" onChange={handlePdfUpload} />
                             </label>
@@ -317,6 +329,7 @@ export default function UploadDocument() {
                     </button>
                 </header>
 
+                {/* Contenedor del PDF con scroll-smooth y centrado */}
                 <div
                     ref={scrollContainerRef}
                     className="flex-1 bg-zinc-800 rounded-2xl border-2 border-zinc-900/10 overflow-y-auto shadow-inner relative custom-scrollbar p-10 scroll-smooth"
@@ -331,9 +344,20 @@ export default function UploadDocument() {
                     )}
 
                     {pdfDoc ? (
-                        Array.from({ length: pdfDoc.numPages }, (_, i) => (
-                            <PdfPage key={i + 1} pageNum={i + 1} pdf={pdfDoc} />
-                        ))
+                        <div className="flex flex-col items-center">
+                            {Array.from({ length: pdfDoc.numPages }, (_, i) => {
+                                const pageNum = i + 1;
+                                const isCurrentResult = pagesWithResults[currentResultIndex] === pageNum;
+                                return (
+                                    <div
+                                        key={pageNum}
+                                        className={`transition-all duration-500 ${isCurrentResult ? 'ring-8 ring-blue-500/30 rounded-lg' : ''}`}
+                                    >
+                                        <PdfPage pageNum={pageNum} pdf={pdfDoc} />
+                                    </div>
+                                );
+                            })}
+                        </div>
                     ) : (
                         <div className="h-full flex flex-col items-center justify-center text-zinc-500">
                             <FileText size={48} strokeWidth={1} className="opacity-20 mb-4" />
