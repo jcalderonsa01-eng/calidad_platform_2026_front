@@ -23,7 +23,10 @@ import "react-toastify/dist/ReactToastify.css";
 const PdfPage = ({ pageNum, pdf }: { pageNum: number, pdf: any }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
+    // Inside PdfPage component
     useEffect(() => {
+        let renderTask: any = null;
+
         const renderPage = async () => {
             const page = await pdf.getPage(pageNum);
             const viewport = page.getViewport({ scale: 1.5 });
@@ -36,9 +39,22 @@ const PdfPage = ({ pageNum, pdf }: { pageNum: number, pdf: any }) => {
             canvas.height = viewport.height;
             canvas.width = viewport.width;
 
-            await page.render({ canvasContext: context, viewport }).promise;
+            // Store the render task so we can cancel it
+            renderTask = page.render({ canvasContext: context, viewport });
+            try {
+                await renderTask.promise;
+            } catch (err) {
+                // Ignore "Rendering cancelled" errors
+            }
         };
+
         renderPage();
+
+        return () => {
+            if (renderTask) {
+                renderTask.cancel(); // Cancel ongoing render if page changes or unmounts
+            }
+        };
     }, [pageNum, pdf]);
 
     return (
@@ -79,7 +95,6 @@ export default function UploadDocument() {
 
         setIsSearching(true);
         const results: number[] = [];
-        const searchString = `antena ${selectedId}`.toLowerCase();
 
         try {
             for (let i = 1; i <= pdfDoc.numPages; i++) {
@@ -89,13 +104,11 @@ export default function UploadDocument() {
                 const pageText = textContent.items
                     .map((item: any) => item.str)
                     .join("")
-                    .toLowerCase()
-                    .replace(/\s+/g, '');
+                    .toLowerCase();
 
-                // Buscamos la cadena sin espacios para evitar fallos de formato
-                const normalizedSearch = searchString.replace(/\s+/g, '');
+                const regex = new RegExp(`antena\\s*${selectedId}(\\D|$)`, 'i')
 
-                if (pageText.includes(normalizedSearch)) {
+                if (regex.test(pageText)) {
                     results.push(i);
                 }
             }
@@ -202,7 +215,7 @@ export default function UploadDocument() {
                 }
                 const list = Array.from(uniqueAntenas.values());
                 setAntenas(list);
-                if (list.length > 0) setSelectedAntena(list[0]);
+                toast.success(`${list.length} antenas cargadas. Seleccione una para buscar.`);
             }
         };
         reader.readAsBinaryString(file);
@@ -262,16 +275,26 @@ export default function UploadDocument() {
                         <h2 className="text-sm font-bold text-zinc-800 uppercase">Detalle Antena</h2>
                         <span className="bg-zinc-900 text-white text-[17px] px-2 py-1 rounded-full font-bold">ID: {selectedAntena?.['#'] || '--'}</span>
                     </div>
-                    {/* Scroll interno solo para los campos de la antena */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                        {/* Mapeamos siempre las columnas para mantener la estructura visual */}
                         {targetColumns.slice(1).map((col) => (
                             <div key={col} className="group">
-                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{col}</label>
-                                <div className="mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-zinc-700 font-semibold shadow-inner">
-                                    {selectedAntena?.[col] ?? "---"}
+                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                    {col}
+                                </label>
+                                <div className="mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-zinc-700 font-semibold shadow-inner min-h-[32px]">
+                                    {/* Si existe selectedAntena muestra el valor, si no, queda vacío */}
+                                    {selectedAntena?.[col] ?? ""}
                                 </div>
                             </div>
                         ))}
+
+                        {/* Opcional: Un pequeño indicador si no hay nada seleccionado */}
+                        {!selectedAntena && antenas.length > 0 && (
+                            <p className="text-[10px] text-center text-blue-500 font-bold animate-pulse uppercase mt-4">
+                                Seleccione una antena del menú superior
+                            </p>
+                        )}
                     </div>
                 </div>
             </aside>
