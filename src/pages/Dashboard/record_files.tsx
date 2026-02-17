@@ -3,18 +3,42 @@ import {
     flexRender,
     getCoreRowModel,
     useReactTable,
-
 } from "@tanstack/react-table";
 import type { ColumnDef } from "@tanstack/react-table";
-import { FileText, Download, RefreshCw } from "lucide-react";
+import { FileText, Download, RefreshCw, Eye } from "lucide-react";
 import api from "../../api/apiConfig";
 import type { AntennaRecord } from "./Components/records/types";
+import { AntennaTableModal } from "./Components/view_files/AntennaTableModal";
 
+const downloadFile = async (url: string, fileName: string) => {
+    try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = fileName; // Aquí forzamos el nombre y extensión
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+        console.error("Error al descargar el archivo:", error);
+    }
+};
 
 export default function HistorialREI() {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedRecord, setSelectedRecord] = useState<AntennaRecord | null>(null);
+
     const [data, setData] = useState<AntennaRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const handleOpenModal = (record: AntennaRecord) => {
+        setSelectedRecord(record);
+        setIsModalOpen(true);
+    };
 
     // 2. Definición de Columnas (Ahora dentro del mismo archivo para mayor claridad)
     const columns = useMemo<ColumnDef<AntennaRecord>[]>(() => [
@@ -29,15 +53,38 @@ export default function HistorialREI() {
             header: "Documentos",
             cell: ({ row }) => (
                 <div className="flex gap-2">
-                    <a href={row.original.pdf_url} target="_blank" rel="noreferrer"
-                        className="flex items-center gap-1 p-1.5 bg-red-50 text-red-600 rounded hover:bg-red-100 transition text-xs font-medium border border-red-200">
+                    {/* PDF - Ahora forzado a descargar si el usuario no quiere solo ver */}
+                    <button
+                        onClick={() => downloadFile(row.original.pdf_url, `REI_${row.original.id}.pdf`)}
+                        className="flex items-center gap-1 p-1.5 bg-red-50 text-red-600 rounded hover:bg-red-100 transition text-xs font-medium border border-red-200"
+                    >
                         <FileText size={14} /> PDF
-                    </a>
-                    <a href={row.original.excel_url} download
-                        className="flex items-center gap-1 p-1.5 bg-green-50 text-green-600 rounded hover:bg-green-100 transition text-xs font-medium border border-green-200">
+                    </button>
+
+                    {/* EXCEL - Forzando extensión .xlsx */}
+                    <button
+                        onClick={() => downloadFile(row.original.excel_url, `REI_${row.original.id}.xlsx`)}
+                        className="flex items-center gap-1 p-1.5 bg-green-50 text-green-600 rounded hover:bg-green-100 transition text-xs font-medium border border-green-200"
+                    >
                         <Download size={14} /> EXCEL
-                    </a>
+                    </button>
                 </div>
+            )
+        },
+        {
+            id: "fecha_creacion",
+            header: "Fecha de creación",
+            cell: ({ row }) => (
+                <span className="font-semibold">{row.original.createdAt}</span>
+            )
+        },
+        {
+            id: "vista_previa",
+            header: "Ver REI",
+            cell: ({ row }) => (
+                <button onClick={() => handleOpenModal(row.original)} >
+                    <Eye />
+                </button>
             )
         }
     ], []);
@@ -76,8 +123,7 @@ export default function HistorialREI() {
         <div className="p-8 h-screen flex flex-col bg-slate-50">
             <div className="mb-6 flex justify-between items-center">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Historial de Antenas</h1>
-                    <p className="text-slate-500 text-sm">Registros REI sincronizados con la base de datos.</p>
+                    <h1 className="text-2xl font-bold text-slate-800">Historial de Informes REI</h1>
                 </div>
                 <button onClick={fetchData} className="p-2 hover:bg-slate-200 rounded-full transition">
                     <RefreshCw size={20} className={loading ? "animate-spin text-blue-600" : "text-slate-600"} />
@@ -116,6 +162,12 @@ export default function HistorialREI() {
                     </table>
                 )}
             </div>
+            <AntennaTableModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                data={selectedRecord?.antennas || []}
+                idRei={selectedRecord?.id || ''}
+            />
         </div>
     );
 }

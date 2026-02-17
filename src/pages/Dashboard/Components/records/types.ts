@@ -7,4 +7,5 @@ export type AntennaRecord = {
     excel_url: string;
     total_antennas: number;
     antennas: any[]; // Aquí va el array parseado del JSON
+    createdAt: string;
 };

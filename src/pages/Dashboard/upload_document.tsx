@@ -279,10 +279,10 @@ export default function UploadDocument() {
                         {/* Mapeamos siempre las columnas para mantener la estructura visual */}
                         {targetColumns.slice(1).map((col) => (
                             <div key={col} className="group">
-                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                <label className="text-[12px] font-bold text-gray-500 uppercase tracking-widest">
                                     {col}
                                 </label>
-                                <div className="mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs text-zinc-700 font-semibold shadow-inner min-h-[32px]">
+                                <div className="mt-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-[14px] text-zinc-700 font-bold shadow-inner min-h-[32px]">
                                     {/* Si existe selectedAntena muestra el valor, si no, queda vacío */}
                                     {selectedAntena?.[col] ?? ""}
                                 </div>
