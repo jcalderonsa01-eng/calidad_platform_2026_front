@@ -55,45 +55,47 @@ export function Login() {
     if (authLoading) return <div className="flex h-screen items-center justify-center">Verificando...</div>;
 
     return (
-        <Card className="w-full max-w-sm">
-            <CardHeader>
-                <CardTitle>Login to your account</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <form id="login-form" onSubmit={handleSubmit}>
-                    <div className="flex flex-col gap-6">
-                        <div className="grid gap-2">
-                            {/* CAMBIO: Label actualizado a Username */}
-                            <Label htmlFor="username">Username</Label>
-                            <Input
-                                id="username"
-                                type="text"
-                                placeholder="Tu usuario"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                required
-                            />
+        <section className="h-screen w-screen flex flex-cols items-center justify-center">
+            <Card className="shadow-2xl inset-shadow-neutral-200 shadow-green-600">
+                <CardHeader>
+                    <CardTitle>Iniciar sesión</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <form id="login-form" onSubmit={handleSubmit}>
+                        <div className="flex flex-col gap-6">
+                            <div className="grid gap-2">
+                                {/* CAMBIO: Label actualizado a Username */}
+                                <Label htmlFor="username">Username</Label>
+                                <Input
+                                    id="username"
+                                    type="text"
+                                    placeholder="Tu usuario"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="password">Contraseña</Label>
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    placeholder="••••••••"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
                         </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="password">Password</Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                placeholder="••••••••"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                            />
-                        </div>
-                        {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
-                    </div>
-                </form>
-            </CardContent>
-            <CardFooter className="flex-col gap-2">
-                <Button form="login-form" type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Logging in..." : "Login"}
-                </Button>
-            </CardFooter>
-        </Card>
+                    </form>
+                </CardContent>
+                <CardFooter className="flex-col gap-2">
+                    <Button form="login-form" type="submit" className="w-full" disabled={isLoading}>
+                        {isLoading ? "Logging in..." : "Login"}
+                    </Button>
+                </CardFooter>
+            </Card>
+        </section>
     )
 }

@@ -5,7 +5,7 @@ import {
     useReactTable,
 } from "@tanstack/react-table";
 import type { ColumnDef } from "@tanstack/react-table";
-import { FileText, Download, RefreshCw, Eye } from "lucide-react";
+import { FileText, Download, RefreshCw, Eye, Loader2 } from "lucide-react";
 import api from "../../api/apiConfig";
 import type { AntennaRecord } from "./Components/records/types";
 import { AntennaTableModal } from "./Components/view_files/AntennaTableModal";
@@ -17,7 +17,7 @@ const downloadFile = async (url: string, fileName: string) => {
         const blobUrl = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = blobUrl;
-        link.download = fileName; // Aquí forzamos el nombre y extensión
+        link.download = fileName;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -28,19 +28,40 @@ const downloadFile = async (url: string, fileName: string) => {
 };
 
 export default function HistorialREI() {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedRecord, setSelectedRecord] = useState<AntennaRecord | null>(null);
-
+    // ESTADOS
     const [data, setData] = useState<AntennaRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const handleOpenModal = (record: AntennaRecord) => {
-        setSelectedRecord(record);
-        setIsModalOpen(true);
+    // Estados para el Modal y Metadata
+    const [selectedAntennaData, setSelectedAntennaData] = useState<any>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [loadingId, setLoadingId] = useState<number | null>(null); // Para mostrar loader en el ojo específico
+
+    // Función principal para obtener metadata de antenas (Endpoint solicitado)
+    const handleViewAntennas = async (idRei: number) => {
+        setLoadingId(idRei);
+        try {
+            // Usamos la instancia de api o fetch directo. 
+            // Si usas apiConfig (axios), sería: const response = await api.get(`/get_file_metadata/${idRei}`);
+            const response = await api.get('/get_file_metadata/3');
+            const result = response.data
+            console.log(data)
+            if (result.success) {
+                setSelectedAntennaData(result.data);
+                setIsModalOpen(true);
+            } else {
+                alert("No se pudo obtener la información de las antenas");
+            }
+        } catch (error) {
+            console.error("Error al obtener metadata:", error);
+            alert("Error de conexión al obtener detalles");
+        } finally {
+            setLoadingId(null);
+        }
     };
 
-    // 2. Definición de Columnas (Ahora dentro del mismo archivo para mayor claridad)
+    // Definición de Columnas
     const columns = useMemo<ColumnDef<AntennaRecord>[]>(() => [
         { accessorKey: "id", header: "ID REI" },
         {
@@ -53,7 +74,6 @@ export default function HistorialREI() {
             header: "Documentos",
             cell: ({ row }) => (
                 <div className="flex gap-2">
-                    {/* PDF - Ahora forzado a descargar si el usuario no quiere solo ver */}
                     <button
                         onClick={() => downloadFile(row.original.pdf_url, `REI_${row.original.id}.pdf`)}
                         className="flex items-center gap-1 p-1.5 bg-red-50 text-red-600 rounded hover:bg-red-100 transition text-xs font-medium border border-red-200"
@@ -61,7 +81,6 @@ export default function HistorialREI() {
                         <FileText size={14} /> PDF
                     </button>
 
-                    {/* EXCEL - Forzando extensión .xlsx */}
                     <button
                         onClick={() => downloadFile(row.original.excel_url, `REI_${row.original.id}.xlsx`)}
                         className="flex items-center gap-1 p-1.5 bg-green-50 text-green-600 rounded hover:bg-green-100 transition text-xs font-medium border border-green-200"
@@ -75,28 +94,34 @@ export default function HistorialREI() {
             id: "fecha_creacion",
             header: "Fecha de creación",
             cell: ({ row }) => (
-                <span className="font-semibold">{row.original.createdAt}</span>
+                <span className="font-semibold text-slate-500">{row.original.createdAt}</span>
             )
         },
         {
             id: "vista_previa",
             header: "Ver REI",
             cell: ({ row }) => (
-                <button onClick={() => handleOpenModal(row.original)} >
-                    <Eye />
+                <button
+                    onClick={() => handleViewAntennas(row.original.id)}
+                    disabled={loadingId !== null}
+                    className="p-2 hover:bg-blue-50 text-blue-600 rounded-full transition-colors disabled:opacity-50"
+                >
+                    {loadingId === row.original.id ? (
+                        <Loader2 size={18} className="animate-spin" />
+                    ) : (
+                        <Eye size={18} />
+                    )}
                 </button>
             )
         }
-    ], []);
+    ], [loadingId]);
 
-    // 3. Configuración de la Tabla
     const table = useReactTable({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
     });
 
-    // 4. Lógica de Petición
     const fetchData = useCallback(async () => {
         try {
             setLoading(true);
@@ -162,12 +187,18 @@ export default function HistorialREI() {
                     </table>
                 )}
             </div>
-            <AntennaTableModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                data={selectedRecord?.antennas || []}
-                idRei={selectedRecord?.id || ''}
-            />
+
+            {/* Modal de Antenas con la data del fetch */}
+            {selectedAntennaData && (
+                <AntennaTableModal
+                    isOpen={isModalOpen}
+                    onClose={() => {
+                        setIsModalOpen(false);
+                        setSelectedAntennaData(null);
+                    }}
+                    data={selectedAntennaData}
+                />
+            )}
         </div>
     );
 }
