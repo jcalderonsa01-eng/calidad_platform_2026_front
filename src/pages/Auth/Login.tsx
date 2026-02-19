@@ -40,6 +40,8 @@ export function Login() {
             });
 
             loginState(response.data.user || { username: response.data.username });
+            localStorage.setItem('token', response.data.token);
+            localStorage.setItem('isLoggedIn', 'true');
 
             // 3. Navegamos al dashboard
             navigate('/dashboard');

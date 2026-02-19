@@ -46,6 +46,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             await api.post("/auth/logout");
             setUser(null);
             localStorage.removeItem("isLoggedIn"); // Marca opcional para el router
+            localStorage.removeItem("token");
         } catch (error) {
             console.error("Error al cerrar sesión", error);
         }
