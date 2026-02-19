@@ -134,10 +134,6 @@ export default function UploadDocument() {
         const target = document.getElementById(`page-container-${pageNum}`);
 
         if (container && target) {
-            // Calculamos la posición necesaria para que el centro del 'target' 
-            // coincida con el centro del 'container'
-            const targetRect = target.getBoundingClientRect();
-            const containerRect = container.getBoundingClientRect();
 
             // target.offsetTop es la distancia desde el inicio del contenedor
             // Queremos restarle la mitad del espacio sobrante del contenedor
