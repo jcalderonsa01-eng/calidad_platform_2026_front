@@ -39,9 +39,12 @@ export function Login() {
                 password
             });
 
+            if (response.data.token) {
+                localStorage.setItem('token', response.data.token);
+                localStorage.setItem('isLoggedIn', 'true');
+            }
+
             loginState(response.data.user || { username: response.data.username });
-            localStorage.setItem('token', response.data.token);
-            localStorage.setItem('isLoggedIn', 'true');
 
             // 3. Navegamos al dashboard
             navigate('/dashboard');
